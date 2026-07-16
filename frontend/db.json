@@ -1,0 +1,84 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "name": "i Phone",
+      "quantity": 20,
+      "price": 50000,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300"
+    },
+    {
+      "id": "2",
+      "name": "Mouse",
+      "quantity": 50,
+      "price": 500,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=300"
+    },
+    {
+      "id": "3",
+      "name": "Keyboard",
+      "quantity": 30,
+      "price": 1200,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=300"
+    },
+    {
+      "id": "4",
+      "name": "Chair",
+      "quantity": 15,
+      "price": 3500,
+      "category": "Furniture",
+      "image": "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=300"
+    },
+    {
+      "id": "5",
+      "name": "Table",
+      "quantity": 10,
+      "price": 8000,
+      "category": "Furniture",
+      "image": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=300"
+    },
+    {
+      "id": "6",
+      "name": "Headphones",
+      "quantity": 5,
+      "price": 2500,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300"
+    },
+    {
+      "id": "7",
+      "name": "CPU",
+      "quantity": 8,
+      "price": 45000,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d6?w=300"
+    },
+    {
+      "id": "8",
+      "name": "Printer",
+      "quantity": 12,
+      "price": 15000,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1612198162833-c7f85d1f2f3a?w=300"
+    },
+    {
+      "id": "9",
+      "name": "Monitor",
+      "quantity": 9,
+      "price": 18000,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=300"
+    },
+    {
+      "id": "10",
+      "name": "Webcam",
+      "quantity": 25,
+      "price": 2000,
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300"
+    }
+  ]
+}

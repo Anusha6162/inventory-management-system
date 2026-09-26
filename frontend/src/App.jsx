@@ -1,136 +1,744 @@
-import { useState, useEffect } from 'react'
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "./App.css";
+
+const API_URL = "http://localhost:5004/products";
 
 function App() {
-    const [products, setProducts] = useState([])
-    const [name, setName] = useState('')
-    const [quantity, setQuantity] = useState('')
-    const [price, setPrice] = useState('')
-    const [category, setCategory] = useState('')
-    const [image, setImage] = useState('') // Image kosam kotha field
-    const [editingId, setEditingId] = useState(null)
-    const [search, setSearch] = useState('')
+  const [products, setProducts] = useState([]);
 
-    useEffect(() => {
-        fetch('http://localhost:5004/products')
-            .then(res => res.json())
-            .then(data => setProducts(data))
-    }, [])
+  const [form, setForm] = useState({
+    name: "",
+    quantity: "",
+    price: "",
+    category: "",
+    image: "",
+  });
 
-    const handleAdd = () => {
-        const newProduct = { name, quantity: Number(quantity), price: Number(price), category, image }
+  const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState(null);
 
-        if(editingId) {
-            fetch(`http://localhost:5004/products/${editingId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newProduct)
-            })
-                .then(res => res.json())
-                .then(updated => {
-                    setProducts(products.map(p => p.id === editingId ? updated : p))
-                    resetForm()
-                })
-        } else {
-            fetch('http://localhost:5004/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newProduct)
-            })
-                .then(res => res.json())
-                .then(data => {
-                    setProducts([...products, data])
-                    resetForm()
-                })
-        }
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      setProducts(response.data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
     }
+  };
 
-    const handleDelete = (id) => {
-        if(window.confirm("Delete cheyyala?")){
-            fetch(`http://localhost:5004/products/${id}`, { method: 'DELETE' })
-                .then(() => {
-                    setProducts(products.filter(p => p.id !== id))
-                })
-        }
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const productData = {
+      name: form.name,
+      quantity: Number(form.quantity),
+      price: Number(form.price),
+      category: form.category,
+      image: form.image,
+    };
+
+    try {
+      if (editingId) {
+        await axios.put(`${API_URL}/${editingId}`, productData);
+      } else {
+        await axios.post(API_URL, productData);
+      }
+
+      resetForm();
+      fetchProducts();
+    } catch (error) {
+      console.error("Error saving product:", error);
     }
+  };
 
-    const handleEdit = (product) => {
-        setEditingId(product.id)
-        setName(product.name)
-        setQuantity(product.quantity)
-        setPrice(product.price)
-        setCategory(product.category)
-        setImage(product.image)
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      fetchProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
     }
+  };
 
-    const resetForm = () => {
-        setName(''); setQuantity(''); setPrice(''); setCategory(''); setImage(''); setEditingId(null)
-    }
+  const handleEdit = (product) => {
+    setEditingId(product.id);
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-    )
+    setForm({
+      name: product.name || "",
+      quantity: product.quantity || "",
+      price: product.price || "",
+      category: product.category || "",
+      image: product.image || "",
+    });
 
-    const totalProducts = products.length
-    const totalValue = products.reduce((sum, p) => sum + (p.price * p.quantity), 0)
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
-    return (
-        <div style={{padding: '30px', maxWidth: '1200px', margin: 'auto', fontFamily: 'Arial', background: '#f4f4f9'}}>
-            <h1 style={{textAlign: 'center', color: '#2c3e50'}}>📦 Inventory App</h1>
+  const resetForm = () => {
+    setEditingId(null);
 
-            <div style={{background: 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)', color: 'white', padding: '20px', borderRadius: '10px', marginBottom: '20px', textAlign: 'center'}}>
-                <h2 style={{margin: 0}}>Total Products: {totalProducts} | Total Value: Rs.{totalValue}</h2>
-            </div>
+    setForm({
+      name: "",
+      quantity: "",
+      price: "",
+      category: "",
+      image: "",
+    });
+  };
+    const filteredProducts = products.filter((product) =>
+    product.name?.toLowerCase().includes(search.toLowerCase())
+  );
 
-            <input
-                style={{padding: '12px', width: '100%', marginBottom: '20px', border: '1px solid #ccc', borderRadius: '8px'}}
-                placeholder="🔍 Search Product..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-            />
+  const totalProducts = products.length;
 
-            {/* Form */}
-            <div style={{background: 'white', padding: '20px', borderRadius: '10px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px'}}>
-                <input style={{padding: '10px', flex: 1}} placeholder="Product Name" value={name} onChange={e => setName(e.target.value)} />
-                <input style={{padding: '10px', width: '80px'}} placeholder="Qty" type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
-                <input style={{padding: '10px', width: '100px'}} placeholder="Price" type="number" value={price} onChange={e => setPrice(e.target.value)} />
-                <input style={{padding: '10px', width: '120px'}} placeholder="Category" value={category} onChange={e => setCategory(e.target.value)} />
-                <input style={{padding: '10px', flex: 1}} placeholder="Image URL" value={image} onChange={e => setImage(e.target.value)} /> {/* Image URL field */}
-                <button style={{padding: '10px 25px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '8px'}} onClick={handleAdd}>
-                    {editingId ? 'Update' : 'Add'}
-                </button>
-            </div>
+  const totalValue = products.reduce(
+    (sum, product) =>
+      sum +
+      Number(product.price || 0) *
+        Number(product.quantity || 0),
+    0
+  );
 
-            {/* Product Cards with Images */}
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px'}}>
-                {filteredProducts.length === 0 ? <p>No products found</p> :
-                    filteredProducts.map(p => (
-                        <div key={p.id} style={{
-                            background: p.quantity < 10 ? '#ffe6e6' : 'white', // Low stock unte red bg
-                            borderRadius: '10px',
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            overflow: 'hidden'
-                        }}>
-                            <img
-                                src={p.image || 'https://via.placeholder.com/280x150?text=No+Image'}
-                                alt={p.name}
-                                style={{width: '100%', height: '150px', objectFit: 'cover'}}
-                            />
-                            <div style={{padding: '15px'}}>
-                                <h3 style={{margin: '0 0 10px 0'}}>{p.name}</h3>
-                                <p>Qty: <b>{p.quantity}</b></p>
-                                <p style={{color: '#27ae60', fontWeight: 'bold', fontSize: '18px'}}>Rs.{p.price}</p>
-                                <p style={{fontSize: '12px', color: 'gray'}}>{p.category}</p>
-                                {p.quantity < 10 && <p style={{color: 'red', fontWeight: 'bold'}}>⚠️ Low Stock!</p>}
-                                <div style={{marginTop: '10px'}}>
-                                    <button onClick={() => handleEdit(p)} style={{marginRight: '5px', padding: '8px 15px', background: '#3498db', color: 'white', border: 'none', borderRadius: '5px'}}>Edit</button>
-                                    <button onClick={() => handleDelete(p.id)} style={{padding: '8px 15px', background: '#e74c3c', color: 'white', border: 'none', borderRadius: '5px'}}>Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-            </div>
+  const totalCategories = new Set(
+    products.map((product) => product.category)
+  ).size;
+
+  const lowStock = products.filter(
+    (product) => Number(product.quantity) < 10
+  ).length;
+
+  return (
+    <div className="app">
+
+      {/* SIDEBAR */}
+
+      <aside className="sidebar">
+
+        <div className="logo">
+
+          <div className="logo-icon">
+            📦
+          </div>
+
+          <div>
+            <h2>StockPro</h2>
+            <span>Inventory System</span>
+          </div>
+
         </div>
-    )
+
+        <nav className="navigation">
+
+          <div className="nav-item active">
+            <span>📊</span>
+            Dashboard
+          </div>
+
+          <div className="nav-item">
+            <span>📦</span>
+            Products
+          </div>
+
+          <div className="nav-item">
+            <span>🗂️</span>
+            Categories
+          </div>
+
+          <div className="nav-item">
+            <span>📈</span>
+            Reports
+          </div>
+
+          <div className="nav-item">
+            <span>⚙️</span>
+            Settings
+          </div>
+
+        </nav>
+
+        <div className="sidebar-profile">
+
+          <div className="profile-avatar">
+            A
+          </div>
+
+          <div>
+            <strong>Admin</strong>
+            <small>Administrator</small>
+          </div>
+
+        </div>
+
+      </aside>
+
+
+      {/* MAIN CONTENT */}
+
+      <main className="main">
+
+        {/* HEADER */}
+
+        <header className="topbar">
+
+          <div>
+
+            <h1>Inventory Dashboard</h1>
+
+            <p>
+              Manage your products and inventory efficiently.
+            </p>
+
+          </div>
+
+          <div className="top-right">
+
+            <button className="notification">
+              🔔
+            </button>
+
+            <div className="admin">
+
+              <div className="admin-avatar">
+                A
+              </div>
+
+              <span>Admin</span>
+
+            </div>
+
+          </div>
+
+        </header>
+
+
+        {/* STAT CARDS */}
+
+        <section className="stats">
+
+          <div className="stat-card blue">
+
+            <div>
+
+              <p>Total Products</p>
+
+              <h2>{totalProducts}</h2>
+
+              <span>
+                Products in inventory
+              </span>
+
+            </div>
+
+            <div className="stat-icon">
+              📦
+            </div>
+
+          </div>
+
+
+          <div className="stat-card purple">
+
+            <div>
+
+              <p>Inventory Value</p>
+
+              <h2>
+                ₹{totalValue.toLocaleString()}
+              </h2>
+
+              <span>
+                Current stock value
+              </span>
+
+            </div>
+
+            <div className="stat-icon">
+              💰
+            </div>
+
+          </div>
+
+
+          <div className="stat-card green">
+
+            <div>
+
+              <p>Categories</p>
+
+              <h2>{totalCategories}</h2>
+
+              <span>
+                Product categories
+              </span>
+
+            </div>
+
+            <div className="stat-icon">
+              🗂️
+            </div>
+
+          </div>
+
+
+          <div className="stat-card orange">
+
+            <div>
+
+              <p>Low Stock</p>
+
+              <h2>{lowStock}</h2>
+
+              <span>
+                Needs attention
+              </span>
+
+            </div>
+
+            <div className="stat-icon">
+              ⚠️
+            </div>
+
+          </div>
+
+        </section>
+          {/* ADD PRODUCT */}
+
+        <section className="panel">
+
+          <div className="panel-title">
+
+            <div>
+
+              <h2>
+                {editingId
+                  ? "Update Product"
+                  : "Add New Product"}
+              </h2>
+
+              <p>
+                {editingId
+                  ? "Update the product information below"
+                  : "Enter product details to add a new product"}
+              </p>
+
+            </div>
+
+            <div className="title-icon">
+              {editingId ? "✏️" : "＋"}
+            </div>
+
+          </div>
+
+
+          <form
+            className="product-form"
+            onSubmit={handleSubmit}
+          >
+
+            {/* Product Name */}
+
+            <div className="input-group">
+
+              <label>
+                Product Name
+              </label>
+
+              <input
+                type="text"
+                name="name"
+                placeholder="Enter product name"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
+
+            </div>
+
+
+            {/* Quantity */}
+
+            <div className="input-group">
+
+              <label>
+                Quantity
+              </label>
+
+              <input
+                type="number"
+                name="quantity"
+                placeholder="0"
+                value={form.quantity}
+                onChange={handleChange}
+                required
+              />
+
+            </div>
+
+
+            {/* Price */}
+
+            <div className="input-group">
+
+              <label>
+                Price
+              </label>
+
+              <input
+                type="number"
+                name="price"
+                placeholder="₹ 0"
+                value={form.price}
+                onChange={handleChange}
+                required
+              />
+
+            </div>
+
+
+            {/* Category */}
+
+            <div className="input-group">
+
+              <label>
+                Category
+              </label>
+
+              <input
+                type="text"
+                name="category"
+                placeholder="Laptops, Headphones..."
+                value={form.category}
+                onChange={handleChange}
+                required
+              />
+
+            </div>
+
+
+            {/* Image URL */}
+
+            <div className="input-group full">
+
+              <label>
+                Product Image URL
+              </label>
+
+              <input
+                type="text"
+                name="image"
+                placeholder="https://example.com/image.jpg"
+                value={form.image}
+                onChange={handleChange}
+              />
+
+            </div>
+
+
+            {/* BUTTONS */}
+
+            <div className="form-buttons">
+
+              {editingId && (
+
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+
+              )}
+
+              <button
+                type="submit"
+                className="add-btn"
+              >
+                {editingId
+                  ? "Update Product"
+                  : "＋ Add Product"}
+              </button>
+
+            </div>
+
+          </form>
+
+        </section>
+
+
+        {/* PRODUCTS SECTION */}
+
+        <section className="panel">
+
+          <div className="products-header">
+
+            <div>
+
+              <h2>
+                Products
+              </h2>
+
+              <p>
+                Manage all products in your inventory
+              </p>
+
+            </div>
+
+
+            {/* SEARCH */}
+
+            <div className="search-box">
+
+              <span>🔍</span>
+
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={search}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
+              />
+
+            </div>
+
+          </div>
+
+
+          {/* PRODUCT TABLE */}
+
+          <div className="table-container">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Product
+                  </th>
+
+                  <th>
+                    Category
+                  </th>
+
+                  <th>
+                    Quantity
+                  </th>
+
+                  <th>
+                    Price
+                  </th>
+
+                  <th>
+                    Total Value
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th>
+                    Actions
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody>
+
+                {filteredProducts.length === 0 ? (
+
+                  <tr>
+
+                    <td
+                      colSpan="7"
+                      className="empty"
+                    >
+
+                      <div className="empty-icon">
+                        📦
+                      </div>
+
+                      <h3>
+                        No Products Found
+                      </h3>
+
+                      <p>
+                        Add your first product above.
+                      </p>
+
+                    </td>
+
+                  </tr>
+
+                ) : (
+
+                  filteredProducts.map((product) => (
+
+                    <tr key={product.id}>
+
+                      {/* PRODUCT */}
+
+                      <td>
+
+                        <div className="product-info">
+
+                          {product.image ? (
+
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                            />
+
+                          ) : (
+
+                            <div className="product-placeholder">
+                              📦
+                            </div>
+
+                          )}
+
+                          <strong>
+                            {product.name}
+                          </strong>
+
+                        </div>
+
+                      </td>
+
+
+                      {/* CATEGORY */}
+
+                      <td>
+
+                        <span className="category">
+                          {product.category}
+                        </span>
+
+                      </td>
+
+
+                      {/* QUANTITY */}
+
+                      <td>
+                        {product.quantity}
+                      </td>
+
+
+                      {/* PRICE */}
+
+                      <td>
+                        ₹{product.price}
+                      </td>
+
+
+                      {/* TOTAL VALUE */}
+
+                      <td>
+
+                        <strong>
+                          ₹
+                          {(
+                            Number(product.quantity) *
+                            Number(product.price)
+                          ).toLocaleString()}
+                        </strong>
+
+                      </td>
+
+
+                      {/* STATUS */}
+
+                      <td>
+
+                        {Number(product.quantity) < 10 ? (
+
+                          <span className="status low">
+                            Low Stock
+                          </span>
+
+                        ) : (
+
+                          <span className="status available">
+                            Available
+                          </span>
+
+                        )}
+
+                      </td>
+
+
+                      {/* ACTIONS */}
+
+                      <td>
+
+                        <div className="actions">
+
+                          <button
+                            className="edit"
+                            onClick={() =>
+                              handleEdit(product)
+                            }
+                          >
+                            ✏️
+                          </button>
+
+                          <button
+                            className="delete"
+                            onClick={() =>
+                              handleDelete(product.id)
+                            }
+                          >
+                            🗑️
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  ))
+
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </section>
+          </main>
+
+    </div>
+  );
 }
 
-export default App
+export default App;
+          
